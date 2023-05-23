@@ -20,7 +20,7 @@ import {
 } from 'three'
 import { createNoise2D } from 'simplex-noise'
 const noise = createNoise2D()
-console.log(noise)
+// console.log(noise)
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
@@ -80,8 +80,8 @@ const uniforms = {
 }
 
 material.onBeforeCompile = (shader) => {
-	console.log(shader.uniforms)
-	console.log(shader.vertexShader)
+	// console.log(shader.uniforms)
+	// console.log(shader.vertexShader)
 
 	shader.uniforms.uTime = uniforms.uTime
 	shader.uniforms.uNoise = { value: noise }
@@ -178,7 +178,7 @@ for (let i = 0; i < 50; i++) {
 	plane.position.set(...point)
 	plane.lookAt(0, 0, 0)
 
-	console.log(s)
+	// console.log(s)
 
 	s.userData.velocity = new Vector3()
 		.randomDirection()
@@ -206,12 +206,13 @@ function tic(t) {
 	controls.update()
 
 	const dt = clock.getDelta() || 0
+	// scene.rotation.y = Math.sin(t * 0.0001) * Math.PI * 2
 
 	// console.log(dt)
 
 	// console.log(t)
 	uniforms.uTime.value = t
-	ico.rotation.y += 0.01
+	ico.rotation.y += dt
 	icoGrid.rotation.y = Math.sin(t * 0.0005)
 
 	sats.forEach((s) => {
@@ -226,7 +227,7 @@ function tic(t) {
 			.clone()
 			.normalize()
 			.multiplyScalar(-1.05 * dt)
-		console.log(F)
+		// console.log(F)
 
 		velocity.add(F)
 
