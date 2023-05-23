@@ -11,6 +11,12 @@ import {
 	SpotLight,
 	MeshStandardMaterial,
 	SpotLightHelper,
+	IcosahedronGeometry,
+	SphereGeometry,
+	Spherical,
+	Clock,
+	PlaneGeometry,
+	DoubleSide,
 } from 'three'
 import { createNoise2D } from 'simplex-noise'
 const noise = createNoise2D()
@@ -51,8 +57,23 @@ float snoise(vec2 v){
 
 const scene = new Scene()
 
+const icoGeometry = new IcosahedronGeometry(1, 1)
+const nMaterial = new MeshNormalMaterial({
+	flatShading: true,
+	side: DoubleSide,
+})
+const ico = new Mesh(icoGeometry, nMaterial)
+
+scene.add(ico)
+
 const geometry = new BoxGeometry(14, 3, 0.1, 50, 10, 2)
-const material = new MeshStandardMaterial({ color: 0x452789, wireframe: true })
+const material = new MeshStandardMaterial({
+	color: 0x8997bb,
+	wireframe: true,
+	opacity: 0.3,
+	transparent: true,
+	// flatShading: true,
+})
 
 const uniforms = {
 	uTime: { value: 0 },
@@ -85,12 +106,9 @@ material.onBeforeCompile = (shader) => {
 
 		#endif
 
-		float distance = mvPosition.x + 7.;
-		float noise = snoise( (mvPosition.xy + vec2(uTime * 0.005)) * vec2(0.25,0.06) ) * (0.4 + 0.1 * distance);
-		
-		mvPosition.z += noise * smoothstep(0.,1.,(distance)*0.3);
-		// mvPosition.y -= (-snoise(mvPosition.xy + vec2(uTime * 0.001)) * 0.5 + distance*distance*0.1) * 0.1;
-		mvPosition.x -= distance * abs(noise) * 0.02 + distance * 0.08;
+		float noise = snoise( mvPosition.xy + vec2(uTime * 0.0005) ) * 0.5 + 0.5;
+
+		mvPosition.xyz *= 1.2 + noise * 0.3;
 
 		mvPosition = modelViewMatrix * mvPosition;
 
@@ -103,19 +121,21 @@ material.onBeforeCompile = (shader) => {
 	// console.log(vertexShader)
 }
 
-const flag = new Mesh(geometry, material)
-flag.position.x = 0
+// const flag = new Mesh(geometry, material)
+// flag.position.x = 0
+const icoGrid = new Mesh(icoGeometry, material)
 
-scene.add(flag)
+// scene.add(flag)
+scene.add(icoGrid)
 
 const camera = new PerspectiveCamera(
 	75,
 	window.innerWidth / window.innerHeight,
 	1,
-	50
+	200
 )
 
-camera.position.copy(new Vector3(-8, 6, 8))
+camera.position.copy(new Vector3(0, 8, 0))
 
 const light = new AmbientLight(0xffffff, 1)
 const spot = new SpotLight(0xffffff, 10, 50, Math.PI * 0.15, 1, 0.01)
@@ -133,7 +153,41 @@ document.body.appendChild(renderer.domElement)
 
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.enableDamping = true
-controls.target = new Vector3(0, 3, 0)
+controls.target = new Vector3(0, 0, 0)
+
+const satGeom = new IcosahedronGeometry(0.1)
+const sat = new Mesh(satGeom, nMaterial)
+
+const sats = []
+const d = 3
+
+const planeGeom = new PlaneGeometry(0.5, 0.5)
+const plane = new Mesh(planeGeom, nMaterial)
+
+for (let i = 0; i < 50; i++) {
+	const s = sat.clone()
+
+	const dd = Math.random()
+	const point = new Vector3().setFromSphericalCoords(
+		d + dd,
+		2 * Math.PI * Math.random(),
+		2 * Math.PI * Math.random()
+	)
+
+	s.position.set(...point)
+	plane.position.set(...point)
+	plane.lookAt(0, 0, 0)
+
+	console.log(s)
+
+	s.userData.velocity = new Vector3()
+		.randomDirection()
+		.multiplyScalar(5)
+		.projectOnPlane(s.position.clone().normalize())
+
+	scene.add(s)
+	sats.push(s)
+}
 
 function onResize() {
 	camera.aspect = window.innerWidth / window.innerHeight
@@ -145,12 +199,38 @@ window.addEventListener('resize', onResize)
 
 onResize()
 
+const clock = new Clock()
+
 function tic(t) {
 	renderer.render(scene, camera)
 	controls.update()
 
+	const dt = clock.getDelta() || 0
+
+	// console.log(dt)
+
 	// console.log(t)
 	uniforms.uTime.value = t
+	ico.rotation.y += 0.01
+
+	sats.forEach((s) => {
+		const { velocity } = s.userData
+
+		s.rotation.x += 0.05
+		s.rotation.z += 0.05
+
+		const teta = Math.atan(velocity.clone().length() / s.position.length())
+
+		const F = s.position
+			.clone()
+			.normalize()
+			.multiplyScalar(-1.05 * dt)
+		console.log(F)
+
+		velocity.add(F)
+
+		s.position.add(velocity.clone().multiplyScalar(dt))
+	})
 
 	requestAnimationFrame(tic)
 }
