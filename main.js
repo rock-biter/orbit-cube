@@ -135,7 +135,7 @@ const camera = new PerspectiveCamera(
 	200
 )
 
-camera.position.copy(new Vector3(0, 8, 0))
+camera.position.copy(new Vector3(0, 0, 8))
 
 const light = new AmbientLight(0xffffff, 1)
 const spot = new SpotLight(0xffffff, 10, 50, Math.PI * 0.15, 1, 0.01)
@@ -212,6 +212,7 @@ function tic(t) {
 	// console.log(t)
 	uniforms.uTime.value = t
 	ico.rotation.y += 0.01
+	icoGrid.rotation.y = Math.sin(t * 0.0005)
 
 	sats.forEach((s) => {
 		const { velocity } = s.userData
