@@ -131,7 +131,7 @@ scene.add(icoGrid)
 const camera = new PerspectiveCamera(
 	75,
 	window.innerWidth / window.innerHeight,
-	1,
+	0.1,
 	200
 )
 
@@ -159,7 +159,7 @@ const satGeom = new IcosahedronGeometry(0.1)
 const sat = new Mesh(satGeom, nMaterial)
 
 const sats = []
-const d = 3
+const d = 3.5
 
 const planeGeom = new PlaneGeometry(0.5, 0.5)
 const plane = new Mesh(planeGeom, nMaterial)
